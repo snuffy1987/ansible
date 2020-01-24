@@ -32,6 +32,11 @@
   notify:
     - restart icinga2 service
 
+- name: Permissions for enabledModules  dir
+  file:
+    path: /etc/icingaweb2/enabledModules
+    owner: apache
+    group: icingaweb2
 
 - name: Set permissions co configure
   file:
