@@ -11,6 +11,27 @@
     owner: root
     group: root
     mode: '0644'
+    creates: /root/pnp4nagios-0.6.26
+
+- name: Copy pnp module for icingaweb2
+  unarchive:
+    src: pnp_module.tar.gz
+    dest: /usr/share/icingaweb2/modules
+    owner: root
+    group: root
+    creates: /usr/share/icingaweb2/modules/pnp
+
+- name: Check icinga module pnp enabled
+  shell: icingacli module list | grep pnp
+  register: RC_module_pnp
+  ignore_errors: True
+
+- name: Enable icinga module pnp
+  shell: icingacli module enable pnp
+  when: RC_module_pnp.rc != 0
+  notify:
+    - restart icinga2 service
+
 
 - name: Set permissions co configure
   file:
@@ -21,6 +42,16 @@
   shell:
     cmd: cd /root/pnp4nagios-0.6.26 && ./configure  && make all && make fullinstall
     creates: /usr/local/pnp4nagios/bin/npcd
+
+- name: Correct permissions in /usr/local/pnp4nagios
+  file: 
+    path: /usr/local/pnp4nagios
+    state: directory
+    recurse: yes
+    owner: icinga
+    group: icinga
+
+
 
 - name: Remove lines with unwanted occurrences "Require"
   lineinfile:
@@ -55,7 +86,7 @@
 - name: Copy perfdata config
   copy:
     src: perfdata.conf
-    dest: /etc/icinga2/features-enables/
+    dest: /etc/icinga2/features-enabled/
 
 - name: Save data_php stat
   stat:
