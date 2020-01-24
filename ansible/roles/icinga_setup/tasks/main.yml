@@ -1,0 +1,39 @@
+---
+# tasks file for icinga_setup
+- name: Install required packages
+  yum:
+    name: "{{ packages }}"
+
+- name: Icinga2 service handling
+  service:
+    name: icinga2
+    state: started
+    enabled: yes
+
+- name: Mariadb service handling
+  service:
+    name: mariadb 
+    state: started
+    enabled: yes
+
+- name: Httpd service handling
+  service:
+    name: httpd
+    state: started
+    enabled: yes
+
+#- name: Check selinux policy is loaded
+#  shell: semodule -l | grep myIcinga2
+#  register: selinux_installed
+#  ignore_errors: True
+
+#- name: Import selinux policy
+#  shell: semodule -i /root/myRepo/myIcinga2policy.pp
+#  when: selinux_installed.rc != 0
+
+- name: Put SELinux in permissive mode, logging actions that would be blocked.
+  selinux:
+    policy: targeted
+    state: permissive
+
+- import_tasks: more_icinga_setup.yml

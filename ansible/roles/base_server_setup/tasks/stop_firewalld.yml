@@ -1,0 +1,12 @@
+---
+- name: Stop firewalld
+  service:
+    name: firewalld
+    state: stopped
+    enabled: no
+
+- name: Replace server in chrony.conf
+  replace:
+    path: /etc/chrony.conf
+    regexp: '(pool).*(iburst)$'
+    replace: '\1 {{ ntp_server }} \2'

@@ -1,0 +1,41 @@
+---
+- name: Check icinga2 command function
+  shell: icinga2 feature list | grep Enabled | grep command
+  register: RC_feature_comm
+  ignore_errors: True
+
+- name: Enable icinga2 command function
+  shell: icinga2 feature enable command
+  when: RC_feature_comm.rc != 0
+
+- name: Check icinga2 ido-mysql function
+  shell: icinga2 feature list | grep Enabled | grep  ido-mysql
+  register: RC_feature_ido
+  ignore_errors: True
+
+- name: Enable icinga2 ido-mysql functions
+  shell: icinga2 feature enable ido-mysql
+  when: RC_feature_ido.rc != 0
+
+- name: Add apache user to group
+  user:
+    name: apache 
+    groups: icingaweb2
+    append: yes
+
+
+- name: Template ido-mysql.conf
+  template:
+    src: ido-mysql.conf.j2
+    dest: /etc/icinga2/features-enabled/ido-mysql.conf
+    owner: icinga
+    group: icinga
+    mode: '0640'
+  notify:
+   - restart icinga2 service
+
+
+
+- import_tasks: mysql_setup.yml
+- import_tasks: icingacli.yml
+

@@ -1,0 +1,7 @@
+---
+- hosts: me
+  remote_user: root
+  roles:
+    - base_server_setup
+    - icinga_setup
+    - pnp_install

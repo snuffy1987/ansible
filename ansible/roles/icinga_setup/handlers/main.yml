@@ -1,0 +1,6 @@
+---
+- name: restart icinga2 service
+  service: name=icinga2 state=restarted
+
+- name: restart dbservice
+  service: name=mariadb state=restarted

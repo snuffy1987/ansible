@@ -1,0 +1,9 @@
+---
+packages:
+ - rrdtool
+ - rrdtool-perl
+ - perl-Time-HiRes
+ - perl-GD
+ - gcc
+ - tar
+ - make

@@ -1,0 +1,12 @@
+---
+- name: Copy systemd unit file
+  copy:
+    src: npcd.service
+    dest: /etc/systemd/system/
+
+- name: Npcd service handling
+  service:
+    name: npcd
+    state: started
+    enabled: yes
+

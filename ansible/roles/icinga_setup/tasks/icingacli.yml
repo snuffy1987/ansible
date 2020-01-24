@@ -1,0 +1,17 @@
+---
+- name: Check for icinga2 config dir
+  stat: path=/etc/icinga2
+  register: config_exists
+
+- name: Create icinga2 config dir
+  shell: icingacli setup config directory -group icingaweb2 
+  when: not config_exists.stat.exists
+
+
+- name: check for icinga2 token file
+  stat: path=/root/.icingatoken
+  register: token_exists
+
+- name: Generate icinga2 token
+  shell: icingacli setup token create > /root/.icingatoken
+  when: not token_exists.stat.exists

@@ -1,0 +1,106 @@
+---
+# tasks file for pnp_install
+- name: Install pnp packages
+  yum:
+    name: "{{ packages }}"
+
+- name: Copy pnp4nagios and prepare for compilation
+  unarchive:
+    src: pnp4nagios.tar.gz
+    dest: /root/
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Set permissions co configure
+  file:
+    dest: /root/pnp4nagios-0.6.26/configure
+    mode: '0755'
+
+- name: Configure and make install of pnp4nagios
+  shell:
+    cmd: cd /root/pnp4nagios-0.6.26 && ./configure  && make all && make fullinstall
+    creates: /usr/local/pnp4nagios/bin/npcd
+
+- name: Remove lines with unwanted occurrences "Require"
+  lineinfile:
+    dest: /etc/httpd/conf.d/pnp4nagios.conf
+    regexp: "Require"
+    state: absent
+
+- name: Require all granted in apache config
+  lineinfile:
+    path: /etc/httpd/conf.d/pnp4nagios.conf
+    line: '        Require all granted'
+    insertbefore: <IfModule mod_rewrite.c>
+  notify:
+    - restart apache
+
+- name: delete install.php 
+  file:
+    path: /usr/local/pnp4nagios/share/install.php
+    state: absent
+
+- name: Check icinga2 perfdata function
+  shell: icinga2 feature list | grep Enabled | grep perfdata 
+  register: RC_feature_perf
+  ignore_errors: True
+
+- name: Enable icinga2 perfdata functions
+  shell: icinga2 feature enable perfdata
+  when: RC_feature_perf.rc != 0
+  notify:
+    - restart icinga2 service
+  
+- name: Copy perfdata config
+  copy:
+    src: perfdata.conf
+    dest: /etc/icinga2/features-enables/
+
+- name: Save data_php stat
+  stat:
+    path: /usr/local/pnp4nagios/share/application/models/data.php
+    get_checksum: True 
+    checksum_algorithm: md5
+  register: data_php
+
+- name: Apply command to data.php
+  shell:
+    cmd: sed -i 's:if(sizeof(\$pages:if(is_array(\$pages) \&\& sizeof(\$pages:' /usr/local/pnp4nagios/share/application/models/data.php
+  when: data_php.stat.checksum != "4f23f5eb100260a88a3e2d3b0f1b2529"
+
+
+- name: Save process_perfdata.pl stat
+  stat:
+    path: /usr/local/pnp4nagios/libexec/process_perfdata.pl
+    get_checksum: True 
+    checksum_algorithm: md5
+  register: perfdata 
+
+- name: Apply command to process_perfdata.pl
+  shell:
+    cmd: sed -s 's/tv_interval $t0, $t1/tv_interval $t0/g' -i /usr/local/pnp4nagios/libexec/process_perfdata.pl
+  when: perfdata.stat.checksum != "aff2168866cddadb0a328d1b3458ae1e"
+
+- name: Copy npcd.conf
+  copy:
+    src: npcd.cfg
+    dest: /usr/local/pnp4nagios/etc/npcd.cfg
+    owner: icinga
+    group: icinga
+    mode: 755
+
+- import_tasks: service.yml
+
+
+
+#	- name: Running ./configure for FFMPEG
+#          command: '"{{ item }}" chdir=/myhome/ffmpeg-2.8.2/'
+#          with_items:
+#            - ./configure
+#        - name: Running "make" for FFMPEG
+#          command: '"{{ item }}" chdir=/myhome/ffmpeg-2.8.2/'
+#          with_items:
+#            - make
+#        - name: Running "make install" for FFMPEG
+#  	   command: 'make install chdir=/myhome/ffmpeg-2.8.2/'

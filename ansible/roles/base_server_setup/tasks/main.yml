@@ -1,0 +1,28 @@
+---
+- name: Set timezone to Bratislava 
+  timezone:
+    name: Europe/Bratislava
+
+- name: Check for old repos 
+  stat: path=/etc/yum.repos.d/CentOS-Base.repo
+  register: repo_stat
+
+- name: Move old yum.repos 
+  command: mv /etc/yum.repos.d /etc/yum.repos.d.old
+  when: repo_stat.stat.exists
+
+- name: Creates directory for repo
+  file:
+    path: /etc/yum.repos.d
+    state: directory
+
+- name: Add local repository for server
+  yum_repository:
+    name: local
+    description: local_repository 
+    baseurl: file:///root/myRepo
+    gpgcheck: no
+    enabled: yes
+
+
+- import_tasks: stop_firewalld.yml
