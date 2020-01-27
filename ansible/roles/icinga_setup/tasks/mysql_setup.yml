@@ -1,8 +1,24 @@
 ---
-- name: Make sure pymysql is present
-  pip:
-    name: pymysql
-    state: present
+- name: Create dir for installing pymysql
+  file:
+    path: /root/pymysqlsetup
+    state: directory
+
+- name: Copy files needed for pymysql setup
+  copy: 
+    src: pymssql-2.1.1.tar.gz
+    dest: /root/pymysqlsetup
+
+- name: Copy files whl needed for pymysql setup
+  copy: 
+    src: PyMySQL-0.9.3-py2.py3-none-any.whl
+    dest: /root/pymysqlsetup
+
+- name: Perform installation
+  shell: 
+    cmd: pip3 install --find-links . --no-index pymysql
+    chdir: /root/pymysqlsetup
+    creates: /usr/local/lib64/python3.6/site-packages/pymysql
 
 - name: Create root password for DB
   mysql_user:
